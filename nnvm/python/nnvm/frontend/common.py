@@ -36,7 +36,10 @@ def required_attr(attr, key, op_name):
 
 def parse_tshape(tshape):
     """Parse tshape in string."""
-    return [int(x.strip()) for x in tshape.strip('()').split(',')]
+    try:
+        return [int(x.strip()) for x in tshape.strip('()').split(',')]
+    except ValueError:
+        return [int(x.strip()) for x in tshape.strip('[]').split(',')]
 
 def parse_bool_str(attr, key, default='False'):
     """Parse bool string to boolean."""

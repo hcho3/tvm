@@ -68,6 +68,17 @@ def schedule_dense(attrs, outputs, target):
 
 reg.register_pattern("nn.dense", reg.OpPattern.OUT_ELEMWISE_FUSABLE)
 
+@reg.register_compute('nn.contrib_ring_buffer', level=100)
+def compute_ring_buffer(attrs, inputs, out_type, target):
+    return [topi.nn.ring_buffer(inputs[0], inputs[1], axis=attrs.get_int('axis'))]
+
+@reg.register_schedule('nn.contrib_ring_buffer')
+def schedule_ring_buffer(attrs, outputs, target):
+    with target:
+        return topi.generic.schedule_injective(outputs)
+
+reg.register_pattern("nn.contrib_ring_buffer", OpPattern.OPAQUE)
+
 
 # batch_matmul
 @reg.register_compute("nn.batch_matmul")

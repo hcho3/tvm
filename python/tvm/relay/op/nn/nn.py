@@ -504,6 +504,9 @@ def dense(data, weight, units=None, out_dtype=""):
     """
     return _make.dense(data, weight, units, out_dtype)
 
+def contrib_ring_buffer(input, buffer, axis):
+    return _make.contrib_ring_buffer(input, buffer, axis)
+
 
 def relu(data):
     """Rectified linear unit.

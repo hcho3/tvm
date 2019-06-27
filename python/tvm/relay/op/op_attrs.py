@@ -55,6 +55,11 @@ class DenseAttrs(Attrs):
 
 
 @register_relay_attr_node
+class ContribRingBufferAttrs(Attrs):
+    """Attributes for nn.contrib_ring_buffer"""
+
+
+@register_relay_attr_node
 class UpSamplingAttrs(Attrs):
     """Attributes for nn.upsampling"""
 

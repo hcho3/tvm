@@ -81,6 +81,57 @@ Expr MakeBiasAdd(Expr data,
 TVM_REGISTER_API("relay.op.nn._make.bias_add")
 .set_body_typed(MakeBiasAdd);
 
+// relay.nn.contrib_ring_buffer
+TVM_REGISTER_NODE_TYPE(ContribRingBufferAttrs);
+
+Expr MakeContribRingBuffer(Expr input, Expr buffer, int axis) {
+  auto attrs = make_node<ContribRingBufferAttrs>();
+  attrs->axis = axis;
+  static const Op& op = Op::Get("nn.contrib_ring_buffer");
+  return CallNode::make(op, {input, buffer}, Attrs(attrs), {});
+}
+
+bool ContribRingBufferRel(const Array<Type>& types,
+                          int num_inputs,
+                          const Attrs& attrs,
+                          const TypeReporter& reporter) {
+  CHECK_EQ(types.size(), 3);
+  const auto* input = types[0].as<TensorTypeNode>();
+  const auto* buffer = types[1].as<TensorTypeNode>();
+  const ContribRingBufferAttrs* param = attrs.as<ContribRingBufferAttrs>();
+  if (input == nullptr || buffer == nullptr) return false;
+  CHECK(param != nullptr);
+  CHECK_EQ(input->shape.size(), buffer->shape.size());
+
+  const size_t bufferAxis = static_cast<size_t>(param->axis < 0
+      ? static_cast<int>(buffer->shape.size()) + param->axis : param->axis);
+
+  reporter->Assert(bufferAxis < buffer->shape.size());
+  for (size_t i = 0; i < buffer->shape.size(); ++i) {
+    if (i != bufferAxis) {
+      reporter->AssertEQ(input->shape[i], buffer->shape[i]);
+    }
+  }
+  reporter->Assert(input->shape[bufferAxis] < buffer->shape[bufferAxis]);
+
+  Array<tvm::Expr> oshape = buffer->shape;
+
+  reporter->Assign(types[2], TensorTypeNode::make(oshape, buffer->dtype));
+  return true;
+}
+
+TVM_REGISTER_API("relay.op.nn._make.contrib_ring_buffer")
+.set_body_typed(MakeContribRingBuffer);
+
+RELAY_REGISTER_OP("nn.contrib_ring_buffer")
+.set_attrs_type_key("relay.attrs.ContribRingBufferAttrs")
+.set_num_inputs(2)
+.add_argument("data", "Tensor", "Latest input")
+.add_argument("buffer", "Tensor",
+              "Buffer storing latest [length_buffer] inputs")
+.set_support_level(1)
+.add_type_rel("ContribRingBuffer", ContribRingBufferRel);
+
 
 RELAY_REGISTER_OP("nn.bias_add")
 .describe(R"code(Add bias to an axis of the input.

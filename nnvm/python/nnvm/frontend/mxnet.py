@@ -328,6 +328,10 @@ def _argmin(inputs, attrs):
     new_attrs['keepdims'] = parse_bool_str(attrs, 'keepdims', default="False")
     return get_nnvm_op(op_name)(*inputs, **new_attrs)
 
+def _symbol_ring_buffer(inputs, attrs):
+    output = get_nnvm_op('ring_buffer')(*inputs, **attrs)
+    return _sym._assign(inputs[1], output)
+
 _identity_list = ['__add_scalar__', '__add_symbol__', '__div_scalar__',
                   '__div_symbol__', '__mul_scalar__', '__mul_symbol__',
                   '__pow_scalar__', '__rdiv_scalar__', '__rpow_scalar__',
@@ -389,7 +393,8 @@ _convert_map = {
     'expand_dims'   : _expand_dims,
     'LRN'           : _lrn,
     'ring_buffer'   : _symbol_ring_buffer,
-    'LinearRegressionOutput' : _copy
+    'LinearRegressionOutput' : _copy,
+    'ring_buffer'   : _symbol_ring_buffer
 }
 
 def _convert_symbol(op_name, inputs, attrs,

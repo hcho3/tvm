@@ -857,6 +857,11 @@ def _mx_rnn_layer(inputs, attrs):
     return ret
 
 
+def _mx_contrib_ring_buffer(inputs, attrs):
+    new_attrs = {}
+    new_attrs["axis"] = attrs.get_int("axis")
+    return _op.nn.contrib_ring_buffer(*inputs, **new_attrs)
+
 # Note: due to attribute conversion constraint
 # ops in the identity set must be attribute free
 _identity_list = [
@@ -1018,6 +1023,7 @@ _convert_map = {
     # TODO(tvm-tvm): support all operators.
     #
     # "broadcast_to",
+    "ring_buffer"       : _mx_contrib_ring_buffer,
 }
 
 # set identity list

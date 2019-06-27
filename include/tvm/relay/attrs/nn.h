@@ -366,6 +366,14 @@ struct DenseAttrs : public tvm::AttrsNode<DenseAttrs> {
   }
 };
 
+struct ContribRingBufferAttrs : public tvm::AttrsNode<ContribRingBufferAttrs> {
+  int axis;
+
+  TVM_DECLARE_ATTRS(ContribRingBufferAttrs, "relay.attrs.ContribRingBufferAttrs") {
+    TVM_ATTR_FIELD(axis).set_default(0);
+  }
+};
+
 
 /*! \brief Attributes for upsampling operator */
 struct UpSamplingAttrs : public tvm::AttrsNode<UpSamplingAttrs> {
