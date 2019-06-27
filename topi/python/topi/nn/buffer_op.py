@@ -18,95 +18,96 @@
 """Ring buffer op"""
 from __future__ import absolute_import as _abs
 import tvm
-from ..util import equal_const_int
 from .. import tag
 
 @tvm.tag_scope(tag=tag.INJECTIVE+",ring_buffer")
-def ring_buffer(input, buffer, axis):
-    assert len(input.shape) == len(buffer.shape), \
-        'buffer and input must have same number of dimensions, ' + \
-        'buffer.shape = {}, input.shape = {}'.format(buffer.shape, input.shape)
-    assert axis >= 0 and axis < len(buffer.shape), 'buffer axis out of range'
-    for i in range(len(input.shape)):
+def ring_buffer(data, buffer, axis):
+    """
+    Implements a ring buffer, in which a set number of past inputs are internally cached
+    """
+    assert len(data.shape) == len(buffer.shape), \
+        'buffer and data must have same number of dimensions, ' + \
+        'buffer.shape = {}, data.shape = {}'.format(buffer.shape, data.shape)
+    assert 0 <= axis < len(buffer.shape), 'buffer axis out of range'
+    for i in range(len(data.shape)):
         if i == axis:
-            assert int(str(input.shape[i])) <= int(str(buffer.shape[i]))
+            assert int(str(data.shape[i])) <= int(str(buffer.shape[i]))
         else:
-            assert int(str(input.shape[i])) == int(str(buffer.shape[i]))
+            assert int(str(data.shape[i])) == int(str(buffer.shape[i]))
 
     # for now only 4D and 5D are supported
     assert len(buffer.shape) == 4 or len(buffer.shape) == 5
 
     buflen = buffer.shape[axis]
-    input_size = input.shape[axis]
+    data_size = data.shape[axis]
 
     if len(buffer.shape) == 4:
         if axis == 0:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l:
-                                   tvm.if_then_else(i < buflen - input_size,
-                                       buffer[i + input_size, j, k, l],
-                                       input[i - buflen + input_size, j, k, l]),
+                               tvm.if_then_else(i < buflen - data_size,
+                                                buffer[i + data_size, j, k, l],
+                                                data[i - buflen + data_size, j, k, l]),
                                name='new_buffer')
-        elif axis == 1:
+        if axis == 1:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l:
-                                   tvm.if_then_else(j < buflen - input_size,
-                                       buffer[i, j + input_size, k, l],
-                                       input[i, j - buflen + input_size, k, l]),
+                               tvm.if_then_else(j < buflen - data_size,
+                                                buffer[i, j + data_size, k, l],
+                                                data[i, j - buflen + data_size, k, l]),
                                name='new_buffer')
-        elif axis == 2:
+        if axis == 2:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l:
-                                   tvm.if_then_else(k < buflen - input_size,
-                                       buffer[i, j, k + input_size, l],
-                                       input[i, j, k - buflen + input_size, l]),
+                               tvm.if_then_else(k < buflen - data_size,
+                                                buffer[i, j, k + data_size, l],
+                                                data[i, j, k - buflen + data_size, l]),
                                name='new_buffer')
-        elif axis == 3:
+        if axis == 3:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l:
-                                   tvm.if_then_else(l < buflen - input_size,
-                                       buffer[i, j, k, l + input_size],
-                                       input[i, j, k, l - buflen + input_size]),
+                               tvm.if_then_else(l < buflen - data_size,
+                                                buffer[i, j, k, l + data_size],
+                                                data[i, j, k, l - buflen + data_size]),
                                name='new_buffer')
-        else:
-            assert False, "shouldn't get here"
+        assert False, "shouldn't get here"
     elif len(buffer.shape) == 5:
         if axis == 0:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l, m:
-                                   tvm.if_then_else(i < buflen - input_size,
-                                       buffer[i + input_size, j, k, l, m],
-                                       input[i - buflen + input_size, j, k, l, m]),
+                               tvm.if_then_else(i < buflen - data_size,
+                                                buffer[i + data_size, j, k, l, m],
+                                                data[i - buflen + data_size, j, k, l, m]),
                                name='new_buffer')
-        elif axis == 1:
+        if axis == 1:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l, m:
-                                   tvm.if_then_else(j < buflen - input_size,
-                                       buffer[i, j + input_size, k, l, m],
-                                       input[i, j - buflen + input_size, k, l, m]),
+                               tvm.if_then_else(j < buflen - data_size,
+                                                buffer[i, j + data_size, k, l, m],
+                                                data[i, j - buflen + data_size, k, l, m]),
                                name='new_buffer')
-        elif axis == 2:
+        if axis == 2:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l, m:
-                                   tvm.if_then_else(k < buflen - input_size,
-                                       buffer[i, j, k + input_size, l, m],
-                                       input[i, j, k - buflen + input_size, l, m]),
+                               tvm.if_then_else(k < buflen - data_size,
+                                                buffer[i, j, k + data_size, l, m],
+                                                data[i, j, k - buflen + data_size, l, m]),
                                name='new_buffer')
-        elif axis == 3:
+        if axis == 3:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l, m:
-                                   tvm.if_then_else(l < buflen - input_size,
-                                       buffer[i, j, k, l + input_size, m],
-                                       input[i, j, k, l - buflen + input_size, m]),
+                               tvm.if_then_else(l < buflen - data_size,
+                                                buffer[i, j, k, l + data_size, m],
+                                                data[i, j, k, l - buflen + data_size, m]),
                                name='new_buffer')
-        elif axis == 4:
+        if axis == 4:
             return tvm.compute(buffer.shape,
                                lambda i, j, k, l, m:
-                                   tvm.if_then_else(m < buflen - input_size,
-                                       buffer[i, j, k, l, m + input_size],
-                                       input[i, j, k, l, m - buflen + input_size]),
+                               tvm.if_then_else(m < buflen - data_size,
+                                                buffer[i, j, k, l, m + data_size],
+                                                data[i, j, k, l, m - buflen + data_size]),
                                name='new_buffer')
-        else:
-            assert False, "shouldn't get here"
+        assert False, "shouldn't get here"
     else:
         assert 'Only 4D and 5D supported'
+    return None
